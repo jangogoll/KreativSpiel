@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kreatives Asset Experiment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .progress {
+            margin-bottom: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .image-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .questions {
+            margin-bottom: 30px;
+        }
+
+        .question-group {
+            margin-bottom: 25px;
+        }
+
+        .question-label {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .option-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .option-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .team-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .team-options .option-btn {
+            min-width: auto;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-next:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-export {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #45a049;
+        }
+
+        .finish-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .finish-message h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .finish-message p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .correct {
+            color: #2e7d32;
+            font-weight: 600;
+        }
+
+        .incorrect {
+            color: #c62828;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loading" style="text-align: center; color: #666;">
+            <p>Laden...</p>
+        </div>
+
+        <div id="quiz" style="display: none;">
+            <div class="progress">
+                <div>Bild <span id="current-number">1</span> von <span id="total-number">10</span></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="error-message" id="error-message"></div>
+
+            <div class="image-container">
+                <img id="asset-image" src="" alt="Asset" />
+            </div>
+
+            <div class="questions">
+                <div class="question-group">
+                    <div class="question-label">1. Wurde KI verwendet?</div>
+                    <div class="options">
+                        <button class="option-btn" data-question="ai" data-value="yes">Mit KI</button>
+                        <button class="option-btn" data-question="ai" data-value="no">Ohne KI</button>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <div class="question-label">2. Welche Art von Team?</div>
+                    <div class="options team-options">
+                        <button class="option-btn" data-question="team" data-value="creatives_no_ai">Creatives ohne KI</button>
+                        <button class="option-btn" data-question="team" data-value="tech_pro_ai">Tech Professional mit KI</button>
+                        <button class="option-btn" data-question="team" data-value="creatives_ai">Creatives mit KI</button>
+                        <button class="option-btn" data-question="team" data-value="regulars_ai">Regulars mit KI</button>
+                        <button class="option-btn" data-question="team" data-value="only_ai">Nur KI</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="evaluation-section">
+                <div class="button-group">
+                    <button class="btn btn-next" id="evaluate-btn" onclick="evaluateAnswers()" disabled>
+                        Auswerten
+                    </button>
+                </div>
+            </div>
+
+            <div id="result-section" style="display: none;">
+                <div id="result-feedback" style="padding: 20px; background: #f5f5f5; border-radius: 8px; margin-bottom: 20px;">
+                    <div id="result-text" style="font-size: 16px; margin-bottom: 15px;"></div>
+                    <div id="result-details" style="font-size: 14px; color: #666; line-height: 1.6;"></div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-next" id="next-btn" onclick="nextImage()">
+                        Nächstes Bild
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="finish" style="display: none;">
+            <div class="finish-message">
+                <h2>✓ Fertig!</h2>
+                <p>Du hast alle <span id="total-images">10</span> Bilder bewertet. Hier ist deine Zusammenfassung:</p>
+
+                <div style="margin: 30px 0; text-align: left;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f5f5f5;">
+                                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Bild</th>
+                                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">KI?</th>
+                                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Team</th>
+                                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Punkte</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table-body">
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 6px; font-weight: 600; text-align: center;">
+                        Gesamt: <span id="total-score">0</span> / <span id="max-score">20</span> Punkte
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const assets = [
+            { id: 'A', actualTeam: 'creatives_no_ai', name: 'A' },
+            { id: 'B', actualTeam: 'tech_pro_ai', name: 'B' },
+            { id: 'C', actualTeam: 'creatives_ai', name: 'C' },
+            { id: 'D', actualTeam: 'regulars_ai', name: 'D' },
+            { id: 'E', actualTeam: 'only_ai', name: 'E' },
+            { id: 'F', actualTeam: 'creatives_no_ai', name: 'F' },
+            { id: 'G', actualTeam: 'tech_pro_ai', name: 'G' },
+            { id: 'H', actualTeam: 'creatives_ai', name: 'H' },
+            { id: 'I', actualTeam: 'regulars_ai', name: 'I' },
+            { id: 'J', actualTeam: 'only_ai', name: 'J' }
+        ];
+
+        let shuffledAssets = [];
+        let currentIndex = 0;
+        let responses = [];
+        let currentResponses = {};
+
+        // Team mapping für Display
+        const teamDisplay = {
+            'creatives_no_ai': 'Creatives ohne KI',
+            'tech_pro_ai': 'Tech Professional mit KI',
+            'creatives_ai': 'Creatives mit KI',
+            'regulars_ai': 'Regulars mit KI',
+            'only_ai': 'Nur KI'
+        };
+
+        const aiDisplay = {
+            'yes': 'Mit KI',
+            'no': 'Ohne KI'
+        };
+
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function init() {
+            shuffledAssets = shuffle(assets);
+            document.getElementById('total-number').textContent = shuffledAssets.length;
+            document.getElementById('total-images').textContent = shuffledAssets.length;
+            document.getElementById('loading').style.display = 'none';
+            loadImage();
+        }
+
+        function loadImage() {
+            if (currentIndex >= shuffledAssets.length) {
+                showFinish();
+                return;
+            }
+
+            const asset = shuffledAssets[currentIndex];
+            currentResponses = { assetId: asset.id, actualTeam: asset.actualTeam };
+
+            document.getElementById('current-number').textContent = currentIndex + 1;
+            document.getElementById('quiz').style.display = 'block';
+            document.getElementById('asset-image').src = asset.id + '.jpg';
+            document.getElementById('asset-image').onerror = () => {
+                showError(`Bild ${asset.id}.jpg nicht gefunden. Stelle sicher, dass die Bilder im gleichen Verzeichnis sind.`);
+            };
+
+            // Buttons zurücksetzen
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Evaluate-Button zurücksetzen
+            const evaluateBtn = document.getElementById('evaluate-btn');
+            evaluateBtn.disabled = true;
+
+            updateProgress();
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function updateProgress() {
+            const progress = ((currentIndex) / shuffledAssets.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+        }
+
+        function evaluateAnswers() {
+            if (!currentResponses.ai || !currentResponses.team) {
+                showError('Bitte beantworte beide Fragen.');
+                return;
+            }
+            document.getElementById('error-message').style.display = 'none';
+
+            // Auswerten
+            const asset = shuffledAssets[currentIndex];
+            let correctCount = 0;
+            let feedback = '';
+            let details = '';
+
+            // KI-Antwort prüfen
+            const aiCorrect = (currentResponses.ai === 'yes') === (asset.actualTeam !== 'creatives_no_ai' && asset.actualTeam !== 'F');
+            if (aiCorrect) correctCount++;
+
+            // Team-Antwort prüfen
+            const teamCorrect = currentResponses.team === asset.actualTeam;
+            if (teamCorrect) correctCount++;
+
+            // Feedback generieren
+            if (correctCount === 2) {
+                feedback = '✓ Perfekt! Beide Antworten richtig!';
+            } else if (correctCount === 1) {
+                feedback = '◐ Teilweise richtig - eine Antwort passt.';
+            } else {
+                feedback = '✗ Leider falsch. Versuche das nächste!';
+            }
+
+            // Details
+            details = `<strong>Deine Antwort:</strong><br>`;
+            details += `KI-Nutzung: <span class="${aiCorrect ? 'correct' : 'incorrect'}">${aiDisplay[currentResponses.ai]} ${aiCorrect ? '✓' : '✗'}</span><br>`;
+            details += `Team: <span class="${teamCorrect ? 'correct' : 'incorrect'}">${teamDisplay[currentResponses.team]} ${teamCorrect ? '✓' : '✗'}</span><br><br>`;
+
+            if (!aiCorrect || !teamCorrect) {
+                details += `<strong>Richtig war:</strong><br>`;
+                if (!aiCorrect) {
+                    details += `KI-Nutzung: <span class="correct">${asset.actualTeam !== 'creatives_no_ai' && asset.actualTeam !== 'F' ? 'Mit KI' : 'Ohne KI'}</span><br>`;
+                }
+                if (!teamCorrect) {
+                    details += `Team: <span class="correct">${teamDisplay[asset.actualTeam]}</span>`;
+                }
+            }
+
+            // Response speichern
+            currentResponses.correct = correctCount;
+            responses.push(currentResponses);
+
+            // UI aktualisieren
+            document.getElementById('evaluation-section').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+            document.getElementById('result-text').innerHTML = feedback;
+            document.getElementById('result-details').innerHTML = details;
+        }
+
+        function nextImage() {
+            currentIndex++;
+            loadImage();
+
+            // UI zurücksetzen
+            document.getElementById('evaluation-section').style.display = 'block';
+            document.getElementById('result-section').style.display = 'none';
+        }
+
+        function showFinish() {
+            document.getElementById('quiz').style.display = 'none';
+            document.getElementById('finish').style.display = 'block';
+
+            // Tabelle füllen
+            const tbody = document.getElementById('results-table-body');
+            let totalScore = 0;
+
+            responses.forEach((response, index) => {
+                const actualAi = response.actualTeam !== 'creatives_no_ai' && response.actualTeam !== 'F' ? 'yes' : 'no';
+                const aiCorrect = response.ai === actualAi;
+                const teamCorrect = response.team === response.actualTeam;
+
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #ddd';
+
+                const rowHTML = `
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>${response.assetId}</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        <span style="color: ${aiCorrect ? '#2e7d32' : '#c62828'};">
+                            ${aiDisplay[response.ai]} ${aiCorrect ? '✓' : '✗'}
+                        </span>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        <span style="color: ${teamCorrect ? '#2e7d32' : '#c62828'};">
+                            ${teamDisplay[response.team].substring(0, 20)}... ${teamCorrect ? '✓' : '✗'}
+                        </span>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: 600;">
+                        ${response.correct}/2
+                    </td>
+                `;
+
+                row.innerHTML = rowHTML;
+                tbody.appendChild(row);
+                totalScore += response.correct;
+            });
+
+            // Gesamtpunkte anzeigen
+            document.getElementById('total-score').textContent = totalScore;
+            document.getElementById('max-score').textContent = responses.length * 2;
+
+            // CSV automatisch exportieren
+            setTimeout(() => {
+                exportCSV();
+            }, 500);
+        }
+
+        function exportCSV() {
+            if (responses.length === 0) {
+                alert('Keine Antworten zum Exportieren.');
+                return;
+            }
+
+            let csv = 'Bild,Angegebene KI,Tatsächliche KI,KI korrekt,Geschätztes Team,Tatsächliches Team,Team korrekt,Punkte\n';
+
+            responses.forEach(response => {
+                const actualAi = response.actualTeam !== 'creatives_no_ai' && response.actualTeam !== 'F' ? 'yes' : 'no';
+                const aiCorrect = response.ai === actualAi ? 'Ja' : 'Nein';
+                const teamCorrect = response.team === response.actualTeam ? 'Ja' : 'Nein';
+
+                const line = [
+                    response.assetId,
+                    aiDisplay[response.ai],
+                    aiDisplay[actualAi],
+                    aiCorrect,
+                    teamDisplay[response.team],
+                    teamDisplay[response.actualTeam],
+                    teamCorrect,
+                    response.correct
+                ].map(field => `"${field}"`).join(',');
+                csv += line + '\n';
+            });
+
+            // Zusammenfassung
+            const totalScore = responses.reduce((sum, r) => sum + r.correct, 0);
+            const maxScore = responses.length * 2;
+            csv += `\nGesamt:"${totalScore}/${maxScore} Punkte"`;
+
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            const timestamp = new Date().toISOString().slice(0, 10);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `experiment_results_${timestamp}.csv`);
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Event Listener für Buttons
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const question = this.dataset.question;
+                const value = this.dataset.value;
+
+                // Nur den Button der gleichen Frage deselektieren
+                document.querySelectorAll(`.option-btn[data-question="${question}"]`).forEach(b => {
+                    b.classList.remove('selected');
+                });
+
+                this.classList.add('selected');
+                currentResponses[question] = value;
+
+                // Evaluate button aktivieren wenn beide Fragen beantwortet
+                const evaluateBtn = document.getElementById('evaluate-btn');
+                if (currentResponses.ai && currentResponses.team) {
+                    evaluateBtn.disabled = false;
+                }
+            });
+        });
+
+        // Starten
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
